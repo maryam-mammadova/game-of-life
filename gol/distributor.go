@@ -20,10 +20,10 @@ func distributor(p Params, c distributorChannels) {
 	for row := 0; row < p.ImageHeight; row++ {
 		for col := 0; col < p.ImageWidth; col++ {
 			slice[row][col] = <-c.ioInput
-			fmt.Printf("%3d", slice[row][col])
+			//fmt.Printf("%3d", slice[row][col])
 
 		}
-		fmt.Println()
+		//fmt.Println()
 	} //put slice into distributor channel
 
 	// TODO: Execute all turns of the Game of Life.
