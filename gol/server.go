@@ -1,6 +1,9 @@
 package gol
 
-import "uk.ac.bris.cs/gameoflife/util"
+import (
+	"fmt"
+	"uk.ac.bris.cs/gameoflife/util"
+)
 
 type distributorChannels struct {
 	events     chan<- Event
@@ -17,19 +20,32 @@ var counterChannel = make(chan<- int)
 //get slice
 //should use goroutines
 
-func calculateAliveCells(p Params, world [][]byte) []util.Cell {
+func calculateAliveCells(p Params, c distributorChannels, world [][]byte) []util.Cell {
 
-	max := p.ImageHeight
+	fmt.Println("calc")
+
+	maxHeight := p.ImageHeight
+	maxWidth := p.ImageWidth
 	var cells []util.Cell
 
-	for row := 0; row < max; row++ {
-		for col := 0; col < max; col++ {
+	//ticker := time.NewTicker(2 * time.Second)
+	//done := make(chan bool)
+
+	for row := 0; row < maxWidth; row++ {
+		for col := 0; col < maxHeight; col++ {
 			if world[row][col] == 255 {
-				c := util.Cell{col, row}
-				cells = append(cells, c)
+				cell := util.Cell{col, row}
+				cells = append(cells, cell)
+				//c.events <- AliveCellsCount{CompletedTurns: 0, CellsCount: 0}
+				//fmt.Println(cells)
+
 			}
 		}
 	}
+
+	//for _ = range ticker.C {
+	//	c.events <- AliveCellsCount{CompletedTurns: 0, CellsCount: 0}
+	//}
 
 	return cells
 }
@@ -37,49 +53,17 @@ func calculateAliveCells(p Params, world [][]byte) []util.Cell {
 func calculateNextState(p Params, world [][]byte) [][]byte {
 	max := p.ImageHeight
 
-	world2 := make([][]byte, len(world))
-	for i := range world {
-		world2[i] = make([]byte, len(world[i]))
-		copy(world2[i], world[i])
-	}
+	world2 := worldCreate(world)
 
 	for row := 0; row < max; row++ {
 		for col := 0; col < max; col++ {
-			element := world[row][col]
-			counter := 0
 
-			for dy := -1; dy <= 1; dy++ {
-				for dx := -1; dx <= 1; dx++ {
+			world2 = creation(row, col, max, world, world2)
 
-					nRow := (row + dx + max) % max
-					nCol := (col + dy + max) % max
-
-					if world[nRow][nCol] == 255 {
-						counter++
-
-					}
-				}
-			}
-
-			if element == 255 {
-				counter--
-			}
-
-			if element == 0 {
-				if counter == 3 {
-					world2[row][col] = 255
-				}
-			} else {
-
-				if counter < 2 {
-					world2[row][col] = 0
-				} else if counter > 3 {
-					world2[row][col] = 0
-				}
-			}
 		}
 	}
 
+	//fmt.Println("about to return world")
 	return world2
 }
 
@@ -90,3 +74,75 @@ func makeMatrix(p Params) [][]uint8 {
 	}
 	return slice
 }
+
+func worker_worldCreate(world [][]byte) [][]byte {
+
+	chanW := make([]chan [][]byte, 10000000)
+
+	world2 := make([][]byte, len(world))
+	for i := range world {
+		world2[i] = make([]byte, len(world[i]))
+		copy(world2[i], world[i])
+	}
+	return world2
+}
+
+func makeTurns() {
+
+}
+
+func creation(row int, col int, max int, world [][]byte, world2 [][]byte) [][]byte {
+	element := world[row][col]
+	counter := 0
+
+	for dy := -1; dy <= 1; dy++ {
+		for dx := -1; dx <= 1; dx++ {
+
+			nRow := (row + dx + max) % max
+			nCol := (col + dy + max) % max
+
+			if world[nRow][nCol] == 255 {
+				counter++
+
+			}
+		}
+	}
+
+	if element == 255 {
+		counter--
+	}
+	if element == 0 {
+		if counter == 3 {
+			world2[row][col] = 255
+		}
+	} else {
+		if counter < 2 {
+			world2[row][col] = 0
+		} else if counter > 3 {
+			world2[row][col] = 0
+		}
+	}
+
+	return world2
+}
+
+func rowsCol(p Params func func, ) {
+
+	maxHeight := p.ImageHeight
+	maxWidth := p.ImageWidth
+
+	for row := 0; row < maxWidth; row++ {
+		for col := 0; col < maxHeight; col++ {
+
+			world2 = creation(row, col, max, world, world2)
+
+		}
+	}
+
+}
+
+//func worker(startY, endY, startX, endX int, data func(y, x int) uint8, out chan<- [][]uint8) {
+//
+//	slice := medianFilter(startY, endY, startX, endX, data)
+//	out <- slice
+//}

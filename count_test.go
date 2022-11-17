@@ -21,10 +21,12 @@ func TestAlive(t *testing.T) {
 		ImageWidth:  512,
 		ImageHeight: 512,
 	}
+	fmt.Println("stuck1")
 	alive := readAliveCounts(p.ImageWidth, p.ImageHeight)
 	events := make(chan gol.Event)
 	keyPresses := make(chan rune, 2)
 	go gol.Run(p, events, keyPresses)
+	fmt.Println("stuck2")
 
 	implemented := make(chan bool)
 	go func() {
@@ -36,20 +38,27 @@ func TestAlive(t *testing.T) {
 			return
 		}
 	}()
+	fmt.Println("stuck3")
 
 	i := 0
 	for event := range events {
+		fmt.Println("main for")
 		switch e := event.(type) {
 		case gol.AliveCellsCount:
+			fmt.Println("case")
 			var expected int
 			if e.CompletedTurns <= 10000 {
+				fmt.Println("first if")
 				expected = alive[e.CompletedTurns]
 			} else if e.CompletedTurns%2 == 0 {
+				fmt.Println("second if")
 				expected = 5565
 			} else {
+				fmt.Println("else")
 				expected = 5567
 			}
 			actual := e.CellsCount
+			fmt.Println("stuck4")
 			if expected != actual {
 				t.Fatalf("At turn %v expected %v alive cells, got %v instead", e.CompletedTurns, expected, actual)
 			} else {
@@ -60,8 +69,10 @@ func TestAlive(t *testing.T) {
 				i++
 			}
 		}
+		fmt.Println("stuck5")
 		if i >= 5 {
 			keyPresses <- 'q'
+			fmt.Println("stuck6")
 			return
 		}
 	}

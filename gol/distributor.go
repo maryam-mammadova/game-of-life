@@ -10,6 +10,8 @@ import (
 
 func distributor(p Params, c distributorChannels) {
 
+	//fmt.Println("distributor")
+
 	// TODO: Create a 2D slice to store the world.
 	slice := makeMatrix(p)
 	turn := 0
@@ -20,22 +22,27 @@ func distributor(p Params, c distributorChannels) {
 	for row := 0; row < p.ImageHeight; row++ {
 		for col := 0; col < p.ImageWidth; col++ {
 			slice[row][col] = <-c.ioInput
-			//fmt.Printf("%3d", slice[row][col])
 
 		}
-		//fmt.Println()
 	} //put slice into distributor channel
+	//println("first for")
 
 	// TODO: Execute all turns of the Game of Life.
+
+	// ERRROOOOOOOOOOOOOOOOOOOORRRRRRRRRRRRRRRRRRRR
+
+	fmt.Println(p.Turns)
 	for turn < p.Turns {
 		slice = calculateNextState(p, slice)
 		turn++
+		//println(turn)
 	}
+	//println("second for")
 
 	// TODO: Report the final state using FinalTurnCompleteEvent.
 
 	c.events <- FinalTurnComplete{CompletedTurns: turn,
-		Alive: calculateAliveCells(p, slice)}
+		Alive: calculateAliveCells(p, c, slice)}
 
 	// Make sure that the Io has finished any output before exiting.
 	c.ioCommand <- ioCheckIdle
