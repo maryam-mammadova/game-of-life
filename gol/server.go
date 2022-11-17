@@ -15,6 +15,7 @@ type distributorChannels struct {
 }
 
 var counterChannel = make(chan<- int)
+var chanW = make(chan [][]byte, 10000000)
 
 // TODO: Execute all turns of the Game of Life.
 //get slice
@@ -53,17 +54,18 @@ func calculateAliveCells(p Params, c distributorChannels, world [][]byte) []util
 func calculateNextState(p Params, world [][]byte) [][]byte {
 	max := p.ImageHeight
 
-	world2 := worldCreate(world)
+	go workerWorldCreate(world)
 
 	for row := 0; row < max; row++ {
 		for col := 0; col < max; col++ {
 
-			world2 = creation(row, col, max, world, world2)
+			go workerWorldChange(row, col, max, world)
 
 		}
 	}
 
-	//fmt.Println("about to return world")
+	world2 := <-chanW
+
 	return world2
 }
 
@@ -75,35 +77,29 @@ func makeMatrix(p Params) [][]uint8 {
 	return slice
 }
 
-func worker_worldCreate(world [][]byte) [][]byte {
-
-	chanW := make([]chan [][]byte, 10000000)
+func workerWorldCreate(world [][]byte) {
 
 	world2 := make([][]byte, len(world))
 	for i := range world {
 		world2[i] = make([]byte, len(world[i]))
 		copy(world2[i], world[i])
 	}
-	return world2
+	chanW <- world2
 }
 
-func makeTurns() {
-
-}
-
-func creation(row int, col int, max int, world [][]byte, world2 [][]byte) [][]byte {
+func workerWorldChange(row int, col int, max int, world [][]byte) {
 	element := world[row][col]
 	counter := 0
 
+	world2 := <-chanW
+
 	for dy := -1; dy <= 1; dy++ {
 		for dx := -1; dx <= 1; dx++ {
-
 			nRow := (row + dx + max) % max
 			nCol := (col + dy + max) % max
 
 			if world[nRow][nCol] == 255 {
 				counter++
-
 			}
 		}
 	}
@@ -123,23 +119,23 @@ func creation(row int, col int, max int, world [][]byte, world2 [][]byte) [][]by
 		}
 	}
 
-	return world2
+	chanW <- world2
 }
 
-func rowsCol(p Params func func, ) {
-
-	maxHeight := p.ImageHeight
-	maxWidth := p.ImageWidth
-
-	for row := 0; row < maxWidth; row++ {
-		for col := 0; col < maxHeight; col++ {
-
-			world2 = creation(row, col, max, world, world2)
-
-		}
-	}
-
-}
+//func rowsCol(p Params func func, ) {
+//
+//	maxHeight := p.ImageHeight
+//	maxWidth := p.ImageWidth
+//
+//	for row := 0; row < maxWidth; row++ {
+//		for col := 0; col < maxHeight; col++ {
+//
+//			world2 = creation(row, col, max, world, world2)
+//
+//		}
+//	}
+//
+//}
 
 //func worker(startY, endY, startX, endX int, data func(y, x int) uint8, out chan<- [][]uint8) {
 //
