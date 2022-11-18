@@ -31,9 +31,10 @@ func distributor(p Params, c distributorChannels) {
 
 	// ERRROOOOOOOOOOOOOOOOOOOORRRRRRRRRRRRRRRRRRRR
 
-	fmt.Println(p.Turns)
+	//fmt.Println(p.Turns)
 	for turn < p.Turns {
-		slice = calculateNextState(p, slice)
+		go calculateNextState(p, slice)
+		slice = <-chanW
 		turn++
 		//println(turn)
 	}

@@ -1,7 +1,6 @@
 package gol
 
 import (
-	"fmt"
 	"uk.ac.bris.cs/gameoflife/util"
 )
 
@@ -15,7 +14,7 @@ type distributorChannels struct {
 }
 
 var counterChannel = make(chan<- int)
-var chanW = make(chan [][]byte, 10000000)
+var chanW = make(chan [][]byte, 100000000)
 
 // TODO: Execute all turns of the Game of Life.
 //get slice
@@ -23,17 +22,20 @@ var chanW = make(chan [][]byte, 10000000)
 
 func calculateAliveCells(p Params, c distributorChannels, world [][]byte) []util.Cell {
 
-	fmt.Println("calc")
+	//fmt.Println("calc")
 
 	maxHeight := p.ImageHeight
 	maxWidth := p.ImageWidth
 	var cells []util.Cell
+	//threads := p.Threads
 
 	//ticker := time.NewTicker(2 * time.Second)
 	//done := make(chan bool)
 
 	for row := 0; row < maxWidth; row++ {
+		//fmt.Println("calc issue1")
 		for col := 0; col < maxHeight; col++ {
+			//fmt.Println("calc issue2")
 			if world[row][col] == 255 {
 				cell := util.Cell{col, row}
 				cells = append(cells, cell)
@@ -51,22 +53,51 @@ func calculateAliveCells(p Params, c distributorChannels, world [][]byte) []util
 	return cells
 }
 
-func calculateNextState(p Params, world [][]byte) [][]byte {
-	max := p.ImageHeight
+func calculateNextState(p Params, world [][]byte) {
 
 	go workerWorldCreate(world)
 
-	for row := 0; row < max; row++ {
-		for col := 0; col < max; col++ {
+	maxHeight := p.ImageHeight
+	maxWidth := p.ImageWidth
+	rowStart := 0
+	colStart := 0
 
-			go workerWorldChange(row, col, max, world)
+	if p.Threads == 1 {
+
+		for rowStart < maxWidth {
+			for colStart < maxHeight {
+				go workerWorldChange(rowStart, colStart, maxHeight, world)
+				colStart++
+			}
+			rowStart++
+		}
+	} else {
+
+		threads := p.Threads
+		maxExtra := maxHeight / threads
+
+		var slice [][]byte
+
+		for n := 0; n < threads; n++ {
+			slice[n] = make([]byte, 10000000)
+
+			for rowStart < maxExtra {
+				for colStart < maxExtra {
+					go workerWorldChange(rowStart, colStart, maxHeight, slice)
+					colStart++
+				}
+				rowStart++
+			}
+			maxHeight = maxHeight + maxExtra
+			maxWidth = maxWidth + maxWidth
+		}
+
+		for n := 0; n < threads; n++ {
 
 		}
+
 	}
 
-	world2 := <-chanW
-
-	return world2
 }
 
 func makeMatrix(p Params) [][]uint8 {
@@ -104,6 +135,10 @@ func workerWorldChange(row int, col int, max int, world [][]byte) {
 		}
 	}
 
+	//what i need to do is get rid of chanW and instead have the ability to just change a slice and send it back
+	//then in the state func i can send into chanW after assembling all the slices into a world
+	//median filter vibe
+
 	if element == 255 {
 		counter--
 	}
@@ -120,6 +155,10 @@ func workerWorldChange(row int, col int, max int, world [][]byte) {
 	}
 
 	chanW <- world2
+}
+
+func workerCompletingTurns(p Params) {
+
 }
 
 //func rowsCol(p Params func func, ) {
