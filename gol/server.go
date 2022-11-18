@@ -130,6 +130,7 @@ func workerWorldChange(row int, col int, max int, world [][]byte) {
 			nCol := (col + dy + max) % max
 
 			if world[nRow][nCol] == 255 {
+
 				counter++
 			}
 		}
