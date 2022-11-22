@@ -17,7 +17,6 @@ type distributorChannels struct {
 var counterChannel = make(chan<- int)
 
 var chanW = make(chan [][]byte) //chan of a whole world
-//var chanS = make(chan [][]byte) //chan of a world slice
 
 // TODO: Execute all turns of the Game of Life.
 
@@ -54,16 +53,19 @@ func distributor(p Params, c distributorChannels) {
 	} else {
 
 		threads := p.Threads
-		maxExtra := maxHeight / threads
+		maxExtra := maxHeight / threads //threads can be an odd number
+		//for the last thread
+		//height - however much uve done
 
 		slice := make([]chan [][]byte, 18)
 
 		for turn < p.Turns {
 			for n := 0; n < threads; n++ {
 				slice[n] = make(chan [][]byte)
-				slice[n] = <-chanW
+				//slice[n] = chanW
 
 				go worker(p, world, maxWidth, maxHeight)
+				slice[n] = chanW
 				maxHeight = maxHeight + maxExtra
 				maxWidth = maxWidth + maxWidth
 			}
