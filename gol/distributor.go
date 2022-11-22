@@ -43,31 +43,37 @@ func distributor(p Params, c distributorChannels) {
 
 	// ERRROOOOOOOOOOOOOOOOOOOORRRRRRRRRRRRRRRRRRRR
 
+	maxHeight := p.ImageHeight
+	maxWidth := p.ImageWidth
+
 	if p.Threads == 1 {
 		for turn < p.Turns {
-			go calculateNextState(p, world)
-			world = calculateNextState(p, world)
+			world = calculateNextState(p, world, maxWidth, maxHeight)
 			turn++
 		}
 	} else {
 
-		maxHeight := p.ImageHeight
-		maxWidth := p.ImageWidth
 		threads := p.Threads
 		maxExtra := maxHeight / threads
 
-		var slice [][]byte
+		slice := make([]chan [][]byte, 18)
 
-		for n := 0; n < threads; n++ {
-			slice[n] = make([]byte, 1000000)
+		for turn < p.Turns {
+			for n := 0; n < threads; n++ {
+				slice[n] = make(chan [][]byte)
+				slice[n] = <-chanW
 
-			go worker(p, world)
+				go worker(p, world, maxWidth, maxHeight)
+				maxHeight = maxHeight + maxExtra
+				maxWidth = maxWidth + maxWidth
+			}
 
-			maxHeight = maxHeight + maxExtra
-			maxWidth = maxWidth + maxWidth
+			for n := 0; n < threads; n++ {
+				world = append(world, <-slice[n]...)
+			}
+
 		}
 
-		println("multiple threads")
 	}
 
 	// TODO: Report the final state using FinalTurnCompleteEvent.
@@ -102,8 +108,8 @@ func calculateAliveCells(p Params, world [][]byte) []util.Cell {
 	return cells
 }
 
-func calculateNextState(p Params, world [][]byte) [][]byte {
-	max := p.ImageHeight
+func calculateNextState(p Params, world [][]byte, height int, width int) [][]byte {
+	//max := p.ImageHeight
 
 	world2 := make([][]byte, len(world))
 	for i := range world {
@@ -111,16 +117,16 @@ func calculateNextState(p Params, world [][]byte) [][]byte {
 		copy(world2[i], world[i])
 	}
 
-	for row := 0; row < max; row++ {
-		for col := 0; col < max; col++ {
+	for row := 0; row < width; row++ {
+		for col := 0; col < height; col++ {
 			element := world[row][col]
 			counter := 0
 
 			for dy := -1; dy <= 1; dy++ {
 				for dx := -1; dx <= 1; dx++ {
 
-					nRow := (row + dx + max) % max
-					nCol := (col + dy + max) % max
+					nRow := (row + dx + height) % height
+					nCol := (col + dy + height) % height
 
 					if world[nRow][nCol] == 255 {
 						counter++
@@ -159,9 +165,8 @@ func makeMatrix(p Params) [][]uint8 {
 	return slice
 }
 
-func worker(p Params, world [][]byte) {
+func worker(p Params, world [][]byte, height int, width int) {
 
-	world2 := calculateNextState(p, world)
+	world2 := calculateNextState(p, world, height, width)
 	chanW <- world2
-
 }
