@@ -2,19 +2,21 @@ package stubs
 
 var GolAllTurns = "GoLOperations.GolAllTurns"
 
-type Response struct {
-	Message string
-}
-
-type Request struct {
-	Message string
-}
-
-type GoLDataIn struct {
+type GoLDataInP struct {
 	Turns       int
+	Threads     int
 	ImageWidth  int
 	ImageHeight int
 	InputSlice  [][]uint8
+}
+
+type GoldDataInC struct {
+	events:     events,
+	ioCommand:  ioCommand,
+	ioIdle:     ioIdle,
+	ioFilename: ioFilename,
+	ioOutput:   ioOutput,
+	ioInput:    ioInput,
 }
 
 type GoLDataOut struct {
