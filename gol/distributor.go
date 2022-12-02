@@ -40,14 +40,14 @@ func distributor(p Params, c distributorChannels) {
 		ImageHeight: p.ImageHeight,
 		InputSlice:  world,
 	}
-	req2 := stubs.GoldDataInC{
-		events:     c,
-		ioCommand:  ioCommand,
-		ioIdle:     ioIdle,
-		ioFilename: ioFilename,
-		ioOutput:   ioOutput,
-		ioInput:    ioInput,
-	}
+	//req2 := stubs.GoldDataInC{
+	//	events:     c,
+	//	ioCommand:  c.ioCommand,
+	//	ioIdle:     ioIdle,
+	//	ioFilename: ioFilename,
+	//	ioOutput:   ioOutput,
+	//	ioInput:    ioInput,
+	//}
 
 	resp := new(stubs.GoLDataOut)
 	client, err := rpc.Dial("tcp", "127.0.0.1:8040")

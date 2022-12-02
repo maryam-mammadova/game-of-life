@@ -10,14 +10,15 @@ type GoLDataInP struct {
 	InputSlice  [][]uint8
 }
 
-type GoldDataInC struct {
-	events:     events,
-	ioCommand:  ioCommand,
-	ioIdle:     ioIdle,
-	ioFilename: ioFilename,
-	ioOutput:   ioOutput,
-	ioInput:    ioInput,
-}
+//type GoldDataInC struct {
+//	events:     chan,
+//	ioCommand:  chan ioCommand
+//	ioIdle:     ioIdle,
+//	ioFilename: ioFilename,
+//	ioOutput:   ioOutput,
+//	ioInput:    ioInput,
+//huhu
+//}
 
 type GoLDataOut struct {
 	OutputSlice [][]uint8
