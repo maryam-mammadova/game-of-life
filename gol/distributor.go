@@ -5,7 +5,9 @@ import (
 	"log"
 	"net/rpc"
 	"strconv"
+	"time"
 	"uk.ac.bris.cs/gameoflife/stubs"
+	"uk.ac.bris.cs/gameoflife/util"
 )
 
 type distributorChannels struct {
@@ -23,6 +25,7 @@ func distributor(p Params, c distributorChannels) {
 	// TODO: Create a 2D slice to store the world.
 	world := makeMatrix(p)
 	turn := 0
+	ticker := time.NewTicker(2 * time.Second)
 
 	c.ioCommand <- ioInput
 	newFileName := strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight)
@@ -40,28 +43,37 @@ func distributor(p Params, c distributorChannels) {
 		ImageHeight: p.ImageHeight,
 		InputSlice:  world,
 	}
-	//req2 := stubs.GoldDataInC{
-	//	events:     c,
-	//	ioCommand:  c.ioCommand,
-	//	ioIdle:     ioIdle,
-	//	ioFilename: ioFilename,
-	//	ioOutput:   ioOutput,
-	//	ioInput:    ioInput,
-	//}
 
 	resp := new(stubs.GoLDataOut)
-	client, err := rpc.Dial("tcp", "127.0.0.1:8040")
+	client, err := rpc.Dial("tcp", ":8030")
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer client.Close()
 
-	err = client.Call("GoLOperations.GoLAllTurns", req, resp)
-	if err != nil {
-		log.Fatal("arith error:", err)
-	}
+	//defer client.Close()
+	a := client.Go(stubs.GolAllTurns, req, resp, nil)
+	resp.OutputSlice = world
+	sendEvent(c, p, req.InputSlice, resp.OutputSlice, turn)
 
-	output(p, c, turn, newFileName, world)
+	select {
+	case <-ticker.C:
+		err := client.Call(stubs.AliveCellsOp, req, resp)
+		if err != nil {
+			log.Fatal("arith error:", err)
+		}
+		fmt.Println("running")
+		c.events <- AliveCellsCount{
+			CompletedTurns: resp.CompletedTurns,
+			CellsCount:     resp.AliveCells,
+		}
+	case <-a.Done:
+		break
+	}
+	c.events <- FinalTurnComplete{CompletedTurns: req.Turns,
+		Alive: resp.AliveCells}
+
+	//output(p, c, turn, newFileName, res.OutputSlice)
 
 	// Make sure that the Io has finished any output before exiting.
 	c.ioCommand <- ioCheckIdle
@@ -72,6 +84,24 @@ func distributor(p Params, c distributorChannels) {
 	// Close the channel to stop the SDL goroutine gracefully. Removing may cause deadlock.
 	close(c.events)
 
+}
+
+func sendEvent(c distributorChannels, p Params, world [][]uint8, world2 [][]uint8, turn int) {
+	for y := 0; y < p.ImageHeight; y++ {
+		for x := 0; x < p.ImageWidth; x++ {
+			if world[y][x] == 255 && world2[y][x] == 0 {
+				c.events <- CellFlipped{turn, util.Cell{x, y}}
+			} else {
+				//print("x", x)
+				//	print("y", y)
+				//	print(len(world))
+				//	print(len(world2))
+				if world[y][x] == 0 && world2[y][x] == 255 {
+					c.events <- CellFlipped{turn, util.Cell{x, y}}
+				}
+			}
+		}
+	}
 }
 
 func output(p Params, c distributorChannels, turn int, newFileName string, world [][]byte) {

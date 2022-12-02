@@ -1,6 +1,7 @@
 package stubs
 
 var GolAllTurns = "GoLOperations.GolAllTurns"
+var AliveCellsOp = "GolOperations.AliveCells"
 
 type GoLDataInP struct {
 	Turns       int
@@ -10,16 +11,8 @@ type GoLDataInP struct {
 	InputSlice  [][]uint8
 }
 
-//type GoldDataInC struct {
-//	events:     chan,
-//	ioCommand:  chan ioCommand
-//	ioIdle:     ioIdle,
-//	ioFilename: ioFilename,
-//	ioOutput:   ioOutput,
-//	ioInput:    ioInput,
-//huhu
-//}
-
 type GoLDataOut struct {
-	OutputSlice [][]uint8
+	OutputSlice    [][]uint8
+	AliveCells     int
+	CompletedTurns int
 }
